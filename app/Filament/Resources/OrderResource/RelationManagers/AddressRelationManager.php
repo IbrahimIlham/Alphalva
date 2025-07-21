@@ -37,7 +37,7 @@ class AddressRelationManager extends RelationManager
                     ->required()
                     ->maxLength(225),
 
-                TextInput::make('state')
+                TextInput::make('province')
                     ->required()
                     ->maxLength(225),
 
@@ -65,7 +65,7 @@ class AddressRelationManager extends RelationManager
 
                 TextColumn::make('city'),
 
-                TextColumn::make('state'),
+                TextColumn::make('province'),
 
                 TextColumn::make('zip_code'),
                 TextColumn::make('street_address'),

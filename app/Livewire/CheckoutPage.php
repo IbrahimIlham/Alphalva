@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Helpers\CartManagement;
+use App\Helpers\RajaOngkirHelper;
 use App\Mail\OrderPlaced;
 use App\Models\Addresses;
 use App\Models\Order;
@@ -23,14 +24,24 @@ class CheckoutPage extends Component
     public $province;
     public $zip_code;
     public $payment_method;
-    public $shipping_method = 'jne';
+    public $shipping_method; // Property yang hilang
+    // RajaOngkir integration
+    public $provinces = [];
+    public $cities = [];
+    public $selected_province;
+    public $selected_city;
+    public $shipping_cost = 0;
     
     public function mount() {
         $cart_items = CartManagement::getCartItemsFromCookie();
-
         if(count($cart_items) == 0  ) {
             return redirect('/products');
         }
+        // Ambil data provinsi dari RajaOngkir
+        $this->provinces = RajaOngkirHelper::getProvinces();
+        
+        // Debug: Log untuk memastikan data ter-load
+        \Log::info('Provinces loaded:', ['count' => count($this->provinces)]);
     }
 
     public function checkout()
@@ -41,8 +52,8 @@ class CheckoutPage extends Component
             'last_name' => 'required',
             'phone' => 'required',
             'street_address' => 'required',
-            'city' => 'required',
-            'province' => 'required',
+            'selected_province' => 'required',
+            'selected_city' => 'required',
             'zip_code' => 'required',
             'payment_method' => 'required',
             'shipping_method' => 'required',
@@ -70,19 +81,29 @@ class CheckoutPage extends Component
         $order->payment_status = 'pending';
         $order->status = 'new';
         $order->currency = 'idr';
-        // Set shipping amount berdasarkan metode
-        $shipping_amount = 0;
-        if ($this->shipping_method == 'jne') {
-            $shipping_amount = 15000;
-        } elseif ($this->shipping_method == 'jnt') {
-            $shipping_amount = 18000;
-        } elseif ($this->shipping_method == 'sicepat') {
-            $shipping_amount = 20000;
-        } elseif ($this->shipping_method == 'pickup') {
-            $shipping_amount = 0;
+        // Set shipping amount dari RajaOngkir atau default
+        $shipping_amount = $this->shipping_cost;
+        if ($shipping_amount == 0) {
+            // Fallback ke harga default jika tidak ada shipping cost dari RajaOngkir
+            if ($this->shipping_method == 'jne') {
+                $shipping_amount = 15000;
+            } elseif ($this->shipping_method == 'pos') {
+                $shipping_amount = 18000;
+            } elseif ($this->shipping_method == 'tiki') {
+                $shipping_amount = 20000;
+            }
         }
         $order->shipping_amount = $shipping_amount;
         $order->shipping_method = $this->shipping_method;
+        
+        // Debug: Log order details
+        \Log::info('Order created:', [
+            'order_id' => $order->id,
+            'shipping_method' => $this->shipping_method,
+            'shipping_amount' => $shipping_amount,
+            'origin' => 'Jagakarsa, Jakarta Selatan',
+            'destination' => $this->selected_city
+        ]);
         $order->notes = 'Order created by ' . auth()->user()->name;
         $order->save();
 
@@ -91,8 +112,13 @@ class CheckoutPage extends Component
         $address->last_name =  $this->last_name;
         $address->phone = $this->phone;
         $address->street_address = $this->street_address;
-        $address->city = $this->city;
-        $address->province = $this->province;
+        
+        // Ambil nama kota dan provinsi dari data RajaOngkir
+        $selectedCity = collect($this->cities)->firstWhere('city_id', $this->selected_city);
+        $selectedProvince = collect($this->provinces)->firstWhere('province_id', $this->selected_province);
+        
+        $address->city = $selectedCity['city_name'] ?? $this->selected_city;
+        $address->province = $selectedProvince['province'] ?? $this->selected_province;
         $address->zip_code = $this->zip_code;
         $address->order_id = $order->id;
         $address->save();
@@ -107,7 +133,7 @@ class CheckoutPage extends Component
 
         $params = [
             'transaction_details' => [
-                'order_id' => $order->id,
+                'order_id' => 'order_' . $order->id . '_' . time(),
                 'gross_amount' => $order->grand_total + $order->shipping_amount,
             ],
             'customer_details' => [
@@ -137,19 +163,58 @@ class CheckoutPage extends Component
     {
         $cart_items = CartManagement::getCartItemsFromCookie();
         $grand_total = CartManagement::calculateGrandTotal($cart_items);
-        $shipping = 0;
-        if ($this->shipping_method == 'jne') {
-            $shipping = 15000;
-        } elseif ($this->shipping_method == 'jnt') {
-            $shipping = 18000;
-        } elseif ($this->shipping_method == 'sicepat') {
-            $shipping = 20000;
-        }
         return view('livewire.checkout-page', [
             'cart_items' => $cart_items,
             'grand_total' => $grand_total,
-            'shipping_method' => $this->shipping_method,
-            'shipping' => $shipping,
+            'provinces' => $this->provinces,
+            'cities' => $this->cities,
+            'selected_province' => $this->selected_province,
+            'selected_city' => $this->selected_city,
+            'shipping_cost' => $this->shipping_cost,
         ]);
+
+    }
+
+    // Ambil kota dari provinsi terpilih
+    public function getCities()
+    {
+        $this->cities = [];
+        $this->selected_city = null;
+        $this->shipping_cost = 0;
+        $this->shipping_method = '';
+        
+        if ($this->selected_province) {
+            $this->cities = RajaOngkirHelper::getCities($this->selected_province);
+        }
+    }
+
+    // Hitung ongkir dari kota & shipping method terpilih
+    public function getCost()
+    {
+        $this->shipping_cost = 0;
+        if ($this->selected_city && $this->shipping_method) {
+            $weight = 1000; // berat total dalam gram, sesuaikan
+            $origin = 153; // ID kota asal (Jakarta Selatan) - Jagakarsa
+            
+            // Cek apakah shipping method tersedia untuk kota ini
+            $cost = RajaOngkirHelper::getCost($origin, $this->selected_city, $weight, $this->shipping_method);
+            
+            if ($cost > 0) {
+                $this->shipping_cost = $cost;
+                
+                // Debug: Log shipping cost
+                \Log::info('Shipping cost calculated:', [
+                    'origin' => $origin,
+                    'destination' => $this->selected_city,
+                    'courier' => $this->shipping_method,
+                    'cost' => $this->shipping_cost
+                ]);
+            } else {
+                // Reset shipping method jika tidak tersedia
+                $currentMethod = $this->shipping_method;
+                $this->shipping_method = '';
+                session()->flash('shipping_error', 'Layanan ' . strtoupper($currentMethod) . ' tidak tersedia untuk kota ini.');
+            }
+        }
     }
 }

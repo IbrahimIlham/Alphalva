@@ -6,7 +6,7 @@
           <div class="flex items-center justify-between">
             <a class="flex items-center gap-2 flex-none text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-200" href="/" aria-label="Brand">
               <img src="{{ asset('images/logos.png') }}" alt="Logo" class="h-8 w-8 rounded-full object-cover border-2 border-white shadow-md">
-              Alphalva
+              alphalva
             </a>
 
             <div class="md:hidden">
@@ -43,6 +43,8 @@
                   <span class="mr-1">Cart</span>
                   <span class="py-0.5 px-1.5 rounded-full text-xs font-medium bg-white border border-blue-700 text-blue-700">{{ $total_count }}</span>
                 </a>
+
+
 
                 @guest
                 <div class="pt-3 md:pt-0">

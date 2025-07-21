@@ -19,9 +19,9 @@
                     @forelse ($cart_items as $item)
                     <tr wire:key="{{ $item['product_id'] }}">
                       <td class="py-4">
-                        <div class="flex items-center">
-                          <img class="h-16 w-16 mr-4" src="{{ url('storage', $item['image']) }}" alt="Product image">
-                          <span class="font-semibold">{{ $item['name'] }}</span>
+                        <div class="flex flex-col md:flex-row items-start md:items-center min-w-0">
+                          <img class="h-12 w-12 md:h-16 md:w-16 mb-2 md:mb-0 mr-0 md:mr-4 flex-shrink-0" src="{{ url('storage', $item['image']) }}" alt="Product image">
+                          <span class="font-semibold text-xs md:text-base break-words">{{ $item['name'] }}</span>
                         </div>
                       </td>
                       <td class="py-4">{{ Number::currency($item['unit_amount'],'IDR') }}</td>

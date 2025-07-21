@@ -22,12 +22,14 @@
 
                     <div class="grow">
                         <div class="flex items-center gap-x-2">
-                            <p class="text-xs uppercase tracking-wide text-gray-500">
+                            <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-300">
                                 Customer
                             </p>
                         </div>
                         <div class="mt-1 flex items-center gap-x-2">
-                            <div>{{ $address->full_name }}</div>
+                            <div class="text-gray-800 dark:text-white">
+                                {{ $address->full_name }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -180,20 +182,28 @@
 
                             @foreach ($order_items as $item)
                                 <!--[if BLOCK]><![endif]-->
-                                <tr wire:key="{{ $item->id }}">
+                               <tr wire:key="{{ $item->id }}">
                                     <td class="py-4">
-                                        <div class="flex items-center">
-                                            <img class="h-16 w-16 mr-4"
-                                                src="{{ url('storage', $item->product->image[0]) }}"
-                                                alt="Product image">
-                                            <span class="font-semibold">{{ $item->product->name }}</span>
+                                        <div class="flex flex-col md:flex-row items-start md:items-center min-w-0">
+                                            <img class="h-12 w-12 md:h-16 md:w-16 mb-2 md:mb-0 mr-0 md:mr-4 flex-shrink-0"
+                                                 src="{{ url('storage', $item->product->image[0]) }}"
+                                                 alt="Product image">
+                                            <span class="font-semibold text-xs md:text-base break-words">
+                                                {{ $item->product->name }}
+                                            </span>
                                         </div>
                                     </td>
-                                    <td class="py-4">{{ Number::currency($item->unit_amount, 'IDR') }}</td>
-                                    <td class="py-4">
-                                        <span class="text-center w-8">{{ $item->quantity }}</span>
+                                    <td class="py-4 whitespace-nowrap text-xs md:text-base">
+                                        {{ Number::currency($item->unit_amount, 'IDR') }}
                                     </td>
-                                    <td class="py-4">{{ Number::currency($item->total_amount, 'IDR') }}</td>
+                                    <td class="py-4 whitespace-nowrap text-xs md:text-base">
+                                        <span class="text-center w-8 block">
+                                            {{ $item->quantity }}
+                                        </span>
+                                    </td>
+                                    <td class="py-4 whitespace-nowrap text-xs md:text-base">
+                                        {{ Number::currency($item->total_amount, 'IDR') }}
+                                    </td>
                                 </tr>
 
                                 <!--[if ENDBLOCK]><![endif]-->

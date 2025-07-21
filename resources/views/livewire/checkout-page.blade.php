@@ -6,138 +6,92 @@
         <form action="" wire:submit.prevent="checkout">
             <div class="grid grid-cols-12 gap-4">
                 <div class="md:col-span-12 lg:col-span-8 col-span-12">
-                    <!-- Card -->
-                    <div class="bg-white rounded-xl shadow p-4 sm:p-7 dark:bg-slate-900" wire:key="order-summary-{{ $shipping_method }}">
-                        <!-- Shipping Address -->
-                        <div class="mb-6">
-                        <div class="mb-6">
-                            <label class="block text-gray-700 dark:text-white mb-1" for="shipping_method">
-                                Shipping Method
-                            </label>
-                            <select wire:model="shipping_method" wire:change="$refresh" id="shipping_method" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none">
-                                <option value="jne">JNE - Reguler (Rp 15.000)</option>
-                                <option value="jnt">J&T - Reguler (Rp 18.000)</option>
-                                <option value="sicepat">SiCepat - Best (Rp 20.000)</option>
-                                <option value="pickup">Ambil di Toko (Gratis)</option>
-                            </select>
-                            @error('shipping_method')
-                                <div class="text-red-500 text-sm">{{ $message }}</div>
-                            @enderror
+                    <!-- Card: Shipping & Address -->
+                    <div class="bg-white rounded-xl shadow p-4 sm:p-7 dark:bg-slate-900">
+                        <!-- Origin Info -->
+                        <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                            <h3 class="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-1">📦 Pengiriman dari:</h3>
+                            <p class="text-sm text-blue-700 dark:text-blue-300">Jagakarsa, Jakarta Selatan</p>
+                            <p class="text-xs text-blue-600 dark:text-blue-400">Jl. Kelapa Hijau No. 59</p>
                         </div>
-                            <h2 class="text-xl font-bold underline text-gray-700 dark:text-white mb-2">
-                                Shipping Address
-                            </h2>
-                            <div class="grid grid-cols-2 gap-4">
+                        
+                        <!-- Shipping Info -->
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold underline text-gray-700 dark:text-white mb-4">Shipping Address</h2>
+                            <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
-                                    <label class="block text-gray-700 dark:text-white mb-1" for="first_name">
-                                        First Name
-                                    </label>
-                                    <input wire:model="first_name"
-                                        class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none 
-                                        @error('first_name')    
-                                            border-red-500
-                                        @enderror"
-                                        id="first_name" type="text">
-                                    </input>
-                                    @error('first_name')
-                                        <div class="text-red-500 text-sm">{{ $message }}</div>
-                                    @enderror
+                                    <label class="block text-gray-700 dark:text-white mb-1" for="province">Province</label>
+                                    <select wire:model="selected_province" wire:change="getCities" id="province" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('selected_province') border-red-500 @enderror">
+                                        <option value="">Pilih Provinsi</option>
+                                        @foreach($provinces as $province)
+                                            <option value="{{ $province['province_id'] }}">{{ $province['province'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('selected_province')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
                                 </div>
                                 <div>
-                                    <label class="block text-gray-700 dark:text-white mb-1" for="last_name">
-                                        Last Name
-                                    </label>
-                                    <input wire:model="last_name"
-                                        class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none
-                                         @error('last_name')    
-                                            border-red-500
-                                        @enderror"
-                                        id="last_name" type="text">
-                                    </input>
-                                    @error('last_name')
-                                        <div class="text-red-500 text-sm">{{ $message }}</div>
-                                    @enderror
+                                    <label class="block text-gray-700 dark:text-white mb-1" for="city">City</label>
+                                    <select wire:model="selected_city" wire:change="$set('shipping_method', '')" id="city" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('selected_city') border-red-500 @enderror">
+                                        <option value="">Pilih Kota</option>
+                                        @foreach($cities as $city)
+                                            <option value="{{ $city['city_id'] }}">{{ $city['city_name'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('selected_city')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
                                 </div>
                             </div>
-                            <div class="mt-4">
-                                <label class="block text-gray-700 dark:text-white mb-1" for="phone">
-                                    Phone
-                                </label>
-                                <input wire:model="phone"
-                                    class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none
-                                    @error('phone')    
-                                            border-red-500
-                                        @enderror"
-                                    id="phone" type="text">
-                                </input>
-                                @error('phone')
-                                    <div class="text-red-500 text-sm">{{ $message }}</div>
-                                @enderror
+                            <div class="mb-4">
+                                <label class="block text-gray-700 dark:text-white mb-1" for="shipping_method">Shipping Method</label>
+                                <select wire:model="shipping_method" wire:change="getCost" id="shipping_method" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('shipping_method') border-red-500 @enderror">
+                                    <option value="">Pilih Metode Pengiriman</option>
+                                    <option value="jne">JNE</option>
+                                    <option value="pos">POS Indonesia</option>
+                                    <option value="tiki">TIKI</option>
+                                </select>
+                                @error('shipping_method')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
+                                
+                                @if(session()->has('shipping_error'))
+                                    <div class="mt-2 p-2 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
+                                        {{ session('shipping_error') }}
+                                    </div>
+                                @endif
                             </div>
                             <div class="mt-4">
-                                <label class="block text-gray-700 dark:text-white mb-1" for="address">
-                                    Address
-                                </label>
-                                <input wire:model="street_address"
-                                    class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none
-                                    @error('street_address')    
-                                            border-red-500
-                                        @enderror"
-                                    id="address" type="text">
-                                </input>
-                                @error('street_address')
-                                    <div class="text-red-500 text-sm">{{ $message }}</div>
-                                @enderror
-                            </div>
-                            <div class="mt-4">
-                                <label class="block text-gray-700 dark:text-white mb-1" for="city">
-                                    City
-                                </label>
-                                <input wire:model="city"
-                                    class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none
-                                    @error('city')    
-                                            border-red-500
-                                        @enderror"
-                                    id="city" type="text">
-                                </input>
-                                @error('city')
-                                    <div class="text-red-500 text-sm">{{ $message }}</div>
-                                @enderror
+                                <label class="block text-gray-700 dark:text-white mb-1" for="address">Address (Tulis alamat lengkap beserta dengan Kelurahan dan Kecamatan)</label>
+                                <input wire:model="street_address" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('street_address') border-red-500 @enderror" id="address" type="text">
+                                @error('street_address')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
                             </div>
                             <div class="grid grid-cols-2 gap-4 mt-4">
                                 <div>
-                                    <label class="block text-gray-700 dark:text-white mb-1" for="province">
-                                        Province
-                                    </label>
-                                    <input wire:model="province"
-                                        class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none
-                                        @error('province')    
-                                            border-red-500
-                                        @enderror"
-                                        id="province" type="text">
-                                    </input>
-                                    @error('province')
-                                        <div class="text-red-500 text-sm">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-gray-700 dark:text-white mb-1" for="zip">
-                                        ZIP Code
-                                    </label>
-                                    <input wire:model="zip_code"
-                                        class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none
-                                        @error('zip_code')    
-                                            border-red-500
-                                        @enderror"
-                                        id="zip" type="text">
-                                    </input>
-                                    @error('zip_code')
-                                        <div class="text-red-500 text-sm">{{ $message }}</div>
-                                    @enderror
+                                    <label class="block text-gray-700 dark:text-white mb-1" for="zip">ZIP Code</label>
+                                    <input wire:model="zip_code" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('zip_code') border-red-500 @enderror" id="zip" type="text">
+                                    @error('zip_code')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
                                 </div>
                             </div>
                         </div>
-                        <div class="text-lg font-semibold mb-4">
+                        <!-- Shipping Address -->
+                        <div class="mb-6">
+                            <h2 class="text-xl font-bold underline text-gray-700 dark:text-white mb-2">Identity</h2>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 dark:text-white mb-1" for="first_name">First Name</label>
+                                    <input wire:model="first_name" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('first_name') border-red-500 @enderror" id="first_name" type="text">
+                                    @error('first_name')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 dark:text-white mb-1" for="last_name">Last Name</label>
+                                    <input wire:model="last_name" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('last_name') border-red-500 @enderror" id="last_name" type="text">
+                                    @error('last_name')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="block text-gray-700 dark:text-white mb-1" for="phone">Phone</label>
+                                <input wire:model="phone" class="w-full rounded-lg border py-2 px-3 dark:bg-gray-700 dark:text-white dark:border-none @error('phone') border-red-500 @enderror" id="phone" type="text">
+                                @error('phone')<div class="text-red-500 text-sm">{{ $message }}</div>@enderror
+                            </div>
+                            
+                        </div>
+                        <div class="text-lg font-semibold mb-4 dark:text-white">
                             Select Payment Method
                         </div>
                         <ul class="grid w-full gap-6 md:grid-cols-2">
@@ -174,33 +128,31 @@
                             ORDER SUMMARY
                         </div>
                         <div class="flex justify-between mb-2 font-bold">
-                            <span>
+                            <span class="dark:text-white">
                                 Subtotal
                             </span>
-                            <span>
+                            <span class="dark:text-white">
                                 {{ Number::currency($grand_total, 'IDR') }}
                             </span>
                         </div>
                         <div class="flex justify-between mb-2 font-bold">
-                            <span>
+                            <span class="dark:text-white">
                                 Shipping Cost
-                                @if($shipping_method == 'jne') (JNE)
-                                @elseif($shipping_method == 'jnt') (J&T)
-                                @elseif($shipping_method == 'sicepat') (SiCepat)
-                                @elseif($shipping_method == 'pickup') (Pickup)
+                                @if($shipping_method)
+                                    ({{ strtoupper($shipping_method) }})
                                 @endif
                             </span>
-                            <span>
-                                {{ Number::currency($shipping, 'IDR') }}
+                            <span class="dark:text-white">
+                                {{ Number::currency($shipping_cost ?? 0, 'IDR') }}
                             </span>
                         </div>
                         <hr class="bg-slate-400 my-4 h-1 rounded">
                         <div class="flex justify-between mb-2 font-bold">
-                            <span>
+                            <span class="dark:text-white">
                                 Grand Total
                             </span>
-                            <span>
-                                {{ Number::currency($grand_total + $shipping, 'IDR') }}
+                            <span class="dark:text-white">
+                                {{ Number::currency($grand_total + ($shipping_cost ?? 0), 'IDR') }}
                             </span>
                         </div>
                         </hr>
@@ -234,7 +186,7 @@
                                         </div>
                                         <div
                                             class="inline-flex items-center text-base font-semibold text-gray-900 dark:text-white">
-                                            {{ NUmber::currency($item['total_amount'], 'IDR') }}
+                                            {{ Number::currency($item['total_amount'], 'IDR') }}
                                         </div>
                                     </div>
                                 </li>
